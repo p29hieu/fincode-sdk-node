@@ -1,20 +1,20 @@
 import {
-    CreatingPlanRequest,
-    DeletingPlanResponse,
-    ListResponse,
-    PlanObject,
-    RetrievingPlanListQueryParams,
-    UpdatingPlanRequest,
+    CreatingPaymentMethodRequest,
+    RetrievingPaymentMethodListQueryParams,
+    PaymentMethodObject,
 
     APIErrorResponse,
     FincodeAPIError,
     FincodeSDKError,
-} from "../../types/index"
+    ListResponse,
+    DeletingPaymentMethodResponse,
+    RetrievingPaymentMethodQueryParams,
+} from "../../types"
 import { FincodeConfig } from "./fincode"
 import { createFincodeRequestFetch, FincodeRequestHeaders } from "./http"
 import { getFetchErrorMessage, getResponseJSONParseErrorMessage } from "./_errorMessages"
 
-class Plan {
+class PaymentMethod {
 
     private readonly _config: FincodeConfig
 
@@ -23,24 +23,26 @@ class Plan {
     }
 
     /**
-     * **Register a plan**
+     * **Register a payment method**
      * 
-     * corresponds to `POST /v1/plans`
+     * corresponds to `POST /v1/customers/{customer_id}/payment_methods`
      * 
-     * @param {CreatingPaymentRequest} body - request body
+     * @param {string} customerId - customer id
+     * @param {CreatingPaymentMethodRequest} body - request body
      * @param {FincodeRequestHeaders} [headers] - request header
      * 
-     * @returns {Promise<PlanObject>} - created plan object
+     * @returns {Promise<PaymentMethodObject>} - created payment method object
      */
     public create(
-        body: CreatingPlanRequest,
+        customerId: string,
+        body: CreatingPaymentMethodRequest,
         headers?: FincodeRequestHeaders
-    ): Promise<PlanObject> {
+    ): Promise<PaymentMethodObject> {
         return new Promise((resolve, reject) => {
             const fetch = createFincodeRequestFetch(
                 this._config,
                 "POST",
-                "/v1/plans",
+                `/v1/customers/${customerId}/payment_methods`,
                 JSON.stringify(body),
                 headers,
                 undefined,
@@ -49,8 +51,8 @@ class Plan {
             fetch().then((res) => {
                 res.json().then((json) => {
                     if (res.ok) {
-                        const plan = json as PlanObject
-                        resolve(plan)
+                        const paymentMethod = json as PaymentMethodObject
+                        resolve(paymentMethod)
                     } else {
                         const errRes = json as APIErrorResponse
                         const e = new FincodeAPIError(errRes.errors, res.status, !!errRes.message)
@@ -62,24 +64,26 @@ class Plan {
     }
 
     /**
-     * **Retrieve plan list**
+     * **Retrieve payment method list**
      * 
-     * corresponds to `GET /v1/plans`
+     * corresponds to `GET /v1/customers/{customerId}/payment_methods`
      * 
-     * @param {RetrievingPlanListQueryParams} [queryParams] - query parameters
+     * @param {string} customerId - customer id
+     * @param {RetrievingPaymentMethodListQueryParams} [queryParams] - query parameters
      * @param {FincodeRequestHeaders} [headers] - request header
      * 
-     * @returns {Promise<ListResponse<PlanObject>>}
+     * @returns {Promise<ListResponse<PaymentMethodObject>>}
      */
     public retrieveList(
-        queryParams?: RetrievingPlanListQueryParams,
+        customerId: string,
+        queryParams: RetrievingPaymentMethodListQueryParams,
         headers?: FincodeRequestHeaders,
-    ): Promise<ListResponse<PlanObject>> {
+    ): Promise<ListResponse<PaymentMethodObject>> {
         return new Promise((resolve, reject) => {
             const fetch = createFincodeRequestFetch(
                 this._config,
                 "GET",
-                "/v1/plans",
+                `/v1/customers/${customerId}/payment_methods`,
                 undefined,
                 headers,
                 queryParams
@@ -88,7 +92,7 @@ class Plan {
             fetch().then((res) => {
                 res.json().then((json) => {
                     if (res.ok) {
-                        const list = json as ListResponse<PlanObject>
+                        const list = json as ListResponse<PaymentMethodObject>
                         resolve(list)
                     } else {
                         const errRes = json as APIErrorResponse
@@ -101,34 +105,38 @@ class Plan {
     }
 
     /**
-     * **Retrieve a plan**
+     * **Retrieve a payment method**
      * 
-     * corresponds to `GET /v1/plans/:id`
-     * 
-     * @param {string} id - plan id
+     * corresponds to `GET /v1/customers/{customerId}/payment_methods/{id}`
+     *
+     * @param {string} customerId - customer id
+     * @param {string} id - payment method id 
+     * @param {RetrievingPaymentMethodQueryParams} queryParams - query parameters
      * @param {FincodeRequestHeaders} [headers] - request header
      * 
-     * @returns {Promise<PlanObject>} - retrieved plan object
+     * @returns {Promise<PaymentMethodObject>} - retrieved payment method object
      */
     public retrieve(
+        customerId: string,
         id: string,
+        queryParams: RetrievingPaymentMethodQueryParams,
         headers?: FincodeRequestHeaders,
-    ): Promise<PlanObject> {
+    ): Promise<PaymentMethodObject> {
         return new Promise((resolve, reject) => {
             const fetch = createFincodeRequestFetch(
                 this._config,
                 "GET",
-                `/v1/plans/${id}`,
+                `/v1/customers/${customerId}/payment_methods/${id}`,
                 undefined,
                 headers,
-                undefined,
+                queryParams
             )
 
             fetch().then((res) => {
                 res.json().then((json) => {
                     if (res.ok) {
-                        const plan = json as PlanObject
-                        resolve(plan)
+                        const paymentMethod = json as PaymentMethodObject
+                        resolve(paymentMethod)
                     } else {
                         const errRes = json as APIErrorResponse
                         const e = new FincodeAPIError(errRes.errors, res.status, !!errRes.message)
@@ -140,71 +148,26 @@ class Plan {
     }
 
     /**
-     * **Update a plan**
+     * **Delete a payment method**
      * 
-     * corresponds to `PUT /v1/plans/:id`
+     * corresponds to `DELETE /v1/customers/{customerId}/payment_methods/{id}`
      * 
-     * @param {string} id - plan id
-     * @param {UpdatingPlanRequest} body - request body
-     * @param {FincodeRequestHeaders} [headers] - request header
-     * 
-     * @returns {Promise<PlanObject>} - updated plan object
-     */
-    public update(
-        id: string,
-        body: UpdatingPlanRequest,
-        headers?: FincodeRequestHeaders,
-    ): Promise<PlanObject> {
-        return new Promise((resolve, reject) => {
-            const fetch = createFincodeRequestFetch(
-                this._config,
-                "PUT",
-                `/v1/plans/${id}`,
-                JSON.stringify(body),
-                headers,
-                undefined,
-            )
-
-            fetch().then((res) => {
-                res.json().then((json) => {
-                    if (res.ok) {
-                        const plan = json as PlanObject
-                        resolve(plan)
-                    } else {
-                        const errRes = json as APIErrorResponse
-                        const e = new FincodeAPIError(errRes.errors, res.status, !!errRes.message)
-                        reject(e)
-                    }
-                }).catch((e: unknown) => {
-                    const err = new FincodeSDKError(getResponseJSONParseErrorMessage(), e)
-                    reject(err)
-                })
-            }).catch((e: unknown) => {
-                const err = new FincodeSDKError(getFetchErrorMessage(), e)
-                reject(err)
-            })
-        })
-    }
-
-    /**
-     * **Delete a plan**
-     * 
-     * corresponds to `DELETE /v1/plans/:id`
-     * 
-     * @param {string} id - plan id
+     * @param {string} customerId - customer id
+     * @param {string} id - payment method id
      * @param {FincodeRequestHeaders} [headers] - request header
      *  
-     * @returns {Promise<DeletingPlanResponse>} - deleting result
+     * @returns {Promise<DeletingPaymentMethodResponse>} - deleting result
      */
     public delete(
+        customerId: string,
         id: string,
         headers?: FincodeRequestHeaders,
-    ): Promise<DeletingPlanResponse> {
+    ): Promise<DeletingPaymentMethodResponse> {
         return new Promise((resolve, reject) => {
             const fetch = createFincodeRequestFetch(
                 this._config,
                 "DELETE",
-                `/v1/plans/${id}`,
+                `/v1/customers/${customerId}/payment_methods/${id}`,
                 undefined,
                 headers,
                 undefined,
@@ -213,8 +176,8 @@ class Plan {
             fetch().then((res) => {
                 res.json().then((json) => {
                     if (res.ok) {
-                        const plan = json as DeletingPlanResponse
-                        resolve(plan)
+                        const data = json as DeletingPaymentMethodResponse
+                        resolve(data)
                     } else {
                         const errRes = json as APIErrorResponse
                         const e = new FincodeAPIError(errRes.errors, res.status, !!errRes.message)
@@ -233,4 +196,4 @@ class Plan {
 
 }
 
-export { Plan }
+export { PaymentMethod }
